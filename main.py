@@ -1,32 +1,110 @@
-import json
+import os
+import pandas as pd
+from sentence_transformers import SentenceTransformer
+embedder = SentenceTransformer('distiluse-base-multilingual-cased-v2')
 
-from sklearn.feature_extraction import DictVectorizer
+import re
+
 from sklearn.cluster import KMeans
-import csv
-titles=[]
-for_test=[]
-v = DictVectorizer(sparse=False)
-with open('test.csv', encoding='utf-8') as f:
-    csv_reader = csv.reader(f, delimiter=',')
-    line_count = 0
-    for row in csv_reader:
-        if line_count == 0:
-            # print(f'Column names are {", ".join(row)}')
-            line_count += 1
-        else:
-            titles.append(json.loads(row[4]))
-            for_test.append(row[2])
-            line_count += 1
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
 
-X = v.fit_transform(titles)
-# print(X[0])
-num_clusters=7
-km = KMeans(n_clusters=num_clusters, n_init=1000)
-km.fit(X)
-clusters = km.labels_.tolist()
+from ru_number_to_text.num2t4ru import num2text
+import nltk
+nltk.download("stopwords")
+from nltk.corpus import stopwords
+russian_stopwords = stopwords.words("russian")
 
+from nltk.corpus import stopwords
+from pymystem3 import Mystem
+from string import punctuation
+mystem = Mystem()
+df = pd.read_csv('test.csv')
+print(df['post_text'].head())
+
+for i in df.index:
+    df.at[i, 'post_text'] = df.at[i, 'post_text'].replace('\n', '')
+
+df.to_csv('test1.csv', index=False, sep=";")
+
+def del_spaces(text):
+    tmp = len(text)+1
+    while (tmp>len(text)):
+        tmp = len(text)
+        text = text.replace("  ", ' ')
+    return text
+
+def digit_to_words(word):
+    if word.isdigit():
+
+        return num2text(int(word))
+    return word
+
+
+def preprocess_text(text):
+    text = " ".join([digit_to_words(word) for word in text.split(' ') if not '@' in word])
+    tokens = mystem.lemmatize(text.lower())
+    tokens = [token for token in tokens if token not in russian_stopwords \
+              and token != " " \
+              and token.strip() not in punctuation]
+
+    text = " ".join(tokens)
+
+
+
+    return del_spaces("".join([c for c in text if c.isalpha() or c ==' '])).strip()
+
+def clean_tweets(df):
+    #set up punctuations we want to be replaced
+    REPLACE_NO_SPACE = re.compile("(\.)|(\;)|(\:)|(\!)|(\')|(\?)|(\,)|(\")|(\|)|(\()|(\))|(\[)|(\])|(\%)|(\$)|(\>)|(\<)|(\{)|(\})")
+    REPLACE_WITH_SPACE = re.compile("(<br\s/><br\s/?)|(-)|(/)|(:).")
+    tempArr = []
+    for line in df:
+        # send to tweet_processor
+        tmpL = preprocess_text(line)
+        print(line)
+        # print(tmpL)
+        # remove puctuation
+        tmpL = REPLACE_NO_SPACE.sub("", tmpL.lower()) # convert all tweets to lower cases
+        tmpL = REPLACE_WITH_SPACE.sub(" ", tmpL)
+        tempArr.append(tmpL)
+    return tempArr
+
+df['clean tweet'] = clean_tweets(df['post_text'])
+print(df.head())
+corpus = list(df['clean tweet'])
+
+corpus_embeddings = embedder.encode(corpus)
+print(corpus_embeddings)
+
+num_clusters = 16
+clustering_model = KMeans(n_clusters=num_clusters, max_iter=1000, random_state=0)
+clustering_model.fit(corpus_embeddings)
+cluster_assignment = clustering_model.labels_
+
+cluster_df = pd.DataFrame(corpus, columns = ['corpus'])
+cluster_df['cluster'] = cluster_assignment
+
+
+clustered_sentences = [[] for i in range(num_clusters)]
+for sentence_id, cluster_id in enumerate(cluster_assignment):
+    clustered_sentences[cluster_id].append(corpus[sentence_id])
+
+for i, cluster in enumerate(clustered_sentences):
+    print("Cluster ", i+1, "length ", len(cluster))
+    print(cluster)
+    print("")
+
+
+def word_cloud(pred_df, label):
+    wc = ' '.join([text for text in pred_df['corpus'][pred_df['cluster'] == label]])
+    wordcloud = WordCloud(width=800, height=500,
+                          random_state=21, max_font_size=110).generate(wc)
+    fig7 = plt.figure(figsize=(10, 7))
+    plt.imshow(wordcloud, interpolation="bilinear")
+
+    plt.axis('off')
+    fig7.show()
+num_clusters=num_clusters
 for i in range(num_clusters):
-    print("cluster "+ str(i))
-    for z, j in enumerate(clusters):
-        if i==j:
-            print(for_test[z])
+    word_cloud(cluster_df,i)
