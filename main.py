@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 embedder = SentenceTransformer('distiluse-base-multilingual-cased-v2')
-
+from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 
 from sklearn.cluster import KMeans
@@ -14,6 +14,8 @@ import nltk
 nltk.download("stopwords")
 from nltk.corpus import stopwords
 russian_stopwords = stopwords.words("russian")
+russian_stopwords.extend(['который', 'это', 'из-за', 'котором', 'который'])
+print(russian_stopwords)
 
 from nltk.corpus import stopwords
 from pymystem3 import Mystem
@@ -74,17 +76,22 @@ df['clean tweet'] = clean_tweets(df['post_text'])
 print(df.head())
 corpus = list(df['clean tweet'])
 
-corpus_embeddings = embedder.encode(corpus)
+# corpus_embeddings = embedder.encode(corpus)
+vectorizer = TfidfVectorizer(ngram_range=(1,3), max_df=0.95, min_df=0.1)
+corpus_embeddings = vectorizer.fit_transform(corpus)
+
 print(corpus_embeddings)
 
-num_clusters = 16
-clustering_model = KMeans(n_clusters=num_clusters, max_iter=1000, random_state=0)
+num_clusters = 11
+clustering_model = KMeans(n_clusters=num_clusters, max_iter=1000, random_state=0, tol=1e-3)
 clustering_model.fit(corpus_embeddings)
 cluster_assignment = clustering_model.labels_
 
 cluster_df = pd.DataFrame(corpus, columns = ['corpus'])
 cluster_df['cluster'] = cluster_assignment
+cluster_df['readable']=df['post_text']
 
+cluster_df.to_csv('res.csv')
 
 clustered_sentences = [[] for i in range(num_clusters)]
 for sentence_id, cluster_id in enumerate(cluster_assignment):
