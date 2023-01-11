@@ -1,4 +1,4 @@
-import os
+from icecream import ic as ic
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 embedder = SentenceTransformer('distiluse-base-multilingual-cased-v2')
@@ -15,19 +15,13 @@ nltk.download("stopwords")
 from nltk.corpus import stopwords
 russian_stopwords = stopwords.words("russian")
 russian_stopwords.extend(['который', 'это', 'из-за', 'котором', 'который'])
-print(russian_stopwords)
+# print(russian_stopwords)
 
 from nltk.corpus import stopwords
 from pymystem3 import Mystem
 from string import punctuation
 mystem = Mystem()
-df = pd.read_csv('test.csv')
-print(df['post_text'].head())
-
-for i in df.index:
-    df.at[i, 'post_text'] = df.at[i, 'post_text'].replace('\n', '')
-
-df.to_csv('test1.csv', index=False, sep=";")
+df = pd.read_csv('input_0.csv')
 
 def del_spaces(text):
     tmp = len(text)+1
@@ -38,7 +32,6 @@ def del_spaces(text):
 
 def digit_to_words(word):
     if word.isdigit():
-
         return num2text(int(word))
     return word
 
@@ -52,8 +45,6 @@ def preprocess_text(text):
 
     text = " ".join(tokens)
 
-
-
     return del_spaces("".join([c for c in text if c.isalpha() or c ==' '])).strip()
 
 def clean_tweets(df):
@@ -64,7 +55,7 @@ def clean_tweets(df):
     for line in df:
         # send to tweet_processor
         tmpL = preprocess_text(line)
-        print(line)
+        # print(line)
         # print(tmpL)
         # remove puctuation
         tmpL = REPLACE_NO_SPACE.sub("", tmpL.lower()) # convert all tweets to lower cases
@@ -72,15 +63,22 @@ def clean_tweets(df):
         tempArr.append(tmpL)
     return tempArr
 
+for i in df.index:
+    df.at[i, 'post_text'] = df.at[i, 'post_text'].replace('\n', '')
+
+df.to_csv('test1.csv', index=False, sep=";")
+
+
 df['clean tweet'] = clean_tweets(df['post_text'])
-print(df.head())
+
 corpus = list(df['clean tweet'])
+ic(corpus)
 
-# corpus_embeddings = embedder.encode(corpus)
-vectorizer = TfidfVectorizer(ngram_range=(1,3), max_df=0.95, min_df=0.1)
-corpus_embeddings = vectorizer.fit_transform(corpus)
+corpus_embeddings = embedder.encode(corpus)
+# vectorizer = TfidfVectorizer(ngram_range=(1,3), max_df=0.95, min_df=0.1)
+# corpus_embeddings = vectorizer.fit_transform(corpus)
 
-print(corpus_embeddings)
+# print(corpus_embeddings)
 
 num_clusters = 11
 clustering_model = KMeans(n_clusters=num_clusters, max_iter=1000, random_state=0, tol=1e-3)
