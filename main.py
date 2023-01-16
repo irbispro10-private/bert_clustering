@@ -21,7 +21,7 @@ from nltk.corpus import stopwords
 from pymystem3 import Mystem
 from string import punctuation
 mystem = Mystem()
-df = pd.read_csv('input_0.csv')
+df = pd.read_csv('input_1.csv')
 
 def del_spaces(text):
     tmp = len(text)+1
@@ -89,7 +89,7 @@ cluster_df = pd.DataFrame(corpus, columns = ['corpus'])
 cluster_df['cluster'] = cluster_assignment
 cluster_df['readable']=df['post_text']
 
-cluster_df.to_csv('res.csv')
+cluster_df.to_csv('res1.csv')
 
 clustered_sentences = [[] for i in range(num_clusters)]
 for sentence_id, cluster_id in enumerate(cluster_assignment):
