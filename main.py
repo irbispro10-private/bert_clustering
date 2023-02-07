@@ -47,14 +47,14 @@ def preprocess_text(text):
 
     return del_spaces("".join([c for c in text if c.isalpha() or c ==' '])).strip()
 
-def clean_tweets(df):
+def clean_tweets(df, ner):
     #set up punctuations we want to be replaced
     REPLACE_NO_SPACE = re.compile("(\.)|(\;)|(\:)|(\!)|(\')|(\?)|(\,)|(\")|(\|)|(\()|(\))|(\[)|(\])|(\%)|(\$)|(\>)|(\<)|(\{)|(\})")
     REPLACE_WITH_SPACE = re.compile("(<br\s/><br\s/?)|(-)|(/)|(:).")
     tempArr = []
-    for line in df:
+    for i,line in enumerate(df):
         # send to tweet_processor
-
+        addition_ner(ner[i])
         # замена аббревиатур
         line = replace_abbr(line, 'adict.csv')
         ic(line)
@@ -67,6 +67,10 @@ def clean_tweets(df):
         tmpL = REPLACE_WITH_SPACE.sub(" ", tmpL)
         tempArr.append(tmpL)
     return tempArr
+
+def addition_ner(ner):
+    print(type(ner), ner)
+
 
 def replace_abbr(text, adict=None):
     regex = r"[А-ЯA-Z]+[А-ЯA-Z]"
@@ -88,7 +92,7 @@ for i in df.index:
     df.at[i, 'post_text'] = df.at[i, 'post_text'].replace('\n', ' ')
 
 
-df['clean tweet'] = clean_tweets(df['post_text'])
+df['clean tweet'] = clean_tweets(df['post_text'], df['ner'])
 df.to_csv('test1.csv')
 corpus = list(df['clean tweet'])
 # ic(corpus)
