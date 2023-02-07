@@ -15,13 +15,13 @@ nltk.download("stopwords")
 from nltk.corpus import stopwords
 russian_stopwords = stopwords.words("russian")
 russian_stopwords.extend(['который', 'это', 'из-за', 'котором', 'который'])
-# print(russian_stopwords)
 
 from nltk.corpus import stopwords
 from pymystem3 import Mystem
 from string import punctuation
 mystem = Mystem()
-df = pd.read_csv('input_1.csv')
+df = pd.read_csv('input_0.csv')
+
 
 def del_spaces(text):
     tmp = len(text)+1
@@ -38,7 +38,7 @@ def digit_to_words(word):
 
 def preprocess_text(text):
     text = " ".join([digit_to_words(word) for word in text.split(' ') if not '@' in word])
-    tokens = mystem.lemmatize(text.lower())
+    tokens = mystem.lemmatize(text)
     tokens = [token for token in tokens if token not in russian_stopwords \
               and token != " " \
               and token.strip() not in punctuation]
@@ -54,25 +54,44 @@ def clean_tweets(df):
     tempArr = []
     for line in df:
         # send to tweet_processor
+
+        # замена аббревиатур
+        line = replace_abbr(line, 'adict.csv')
+        ic(line)
         tmpL = preprocess_text(line)
         # print(line)
         # print(tmpL)
         # remove puctuation
         tmpL = REPLACE_NO_SPACE.sub("", tmpL.lower()) # convert all tweets to lower cases
+
         tmpL = REPLACE_WITH_SPACE.sub(" ", tmpL)
         tempArr.append(tmpL)
     return tempArr
 
-for i in df.index:
-    df.at[i, 'post_text'] = df.at[i, 'post_text'].replace('\n', '')
+def replace_abbr(text, adict=None):
+    regex = r"[А-ЯA-Z]+[А-ЯA-Z]"
+    abbr = pd.read_csv(adict)
 
-df.to_csv('test1.csv', index=False, sep=";")
+    matches = re.finditer(regex, text, re.MULTILINE)
+
+    for matchNum, match in enumerate(matches, start=1):
+
+        i=abbr.loc[abbr["short"]==match.group()]
+        # .values[0][1]
+        if len(i)>0:
+            text = text.replace(match.group(), i.values[0][1])
+
+        # text.replace(match, )
+    return text
+
+for i in df.index:
+    df.at[i, 'post_text'] = df.at[i, 'post_text'].replace('\n', ' ')
 
 
 df['clean tweet'] = clean_tweets(df['post_text'])
-
+df.to_csv('test1.csv')
 corpus = list(df['clean tweet'])
-ic(corpus)
+# ic(corpus)
 
 corpus_embeddings = embedder.encode(corpus)
 # vectorizer = TfidfVectorizer(ngram_range=(1,3), max_df=0.95, min_df=0.1)
@@ -89,7 +108,7 @@ cluster_df = pd.DataFrame(corpus, columns = ['corpus'])
 cluster_df['cluster'] = cluster_assignment
 cluster_df['readable']=df['post_text']
 
-cluster_df.to_csv('res1.csv')
+cluster_df.to_csv('res+.csv')
 
 clustered_sentences = [[] for i in range(num_clusters)]
 for sentence_id, cluster_id in enumerate(cluster_assignment):
@@ -110,6 +129,7 @@ def word_cloud(pred_df, label):
 
     plt.axis('off')
     fig7.show()
-num_clusters=num_clusters
-for i in range(num_clusters):
-    word_cloud(cluster_df,i)
+
+# num_clusters=num_clusters
+# for i in range(num_clusters):
+#     word_cloud(cluster_df,i)

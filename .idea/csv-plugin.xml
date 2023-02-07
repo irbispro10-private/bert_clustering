@@ -3,7 +3,14 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
-        <entry key="/input.csv">
+        <entry key="/adict.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/input_0.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -17,17 +24,10 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/input_data.csv">
+        <entry key="/res+.csv">
           <value>
             <Attribute>
-              <option name="separator" value=":" />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/nput_data.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value=":" />
+              <option name="separator" value="," />
             </Attribute>
           </value>
         </entry>
@@ -46,20 +46,6 @@
           </value>
         </entry>
         <entry key="/test1.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value=":" />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/Копия input_data.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value=":" />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/Копия Копия input_data.csv">
           <value>
             <Attribute>
               <option name="separator" value=":" />
