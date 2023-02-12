@@ -3,7 +3,7 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 embedder = SentenceTransformer('distiluse-base-multilingual-cased-v2')
 from sklearn.feature_extraction.text import TfidfVectorizer
-import re
+import re, json
 
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
@@ -68,8 +68,12 @@ def clean_tweets(df, ner):
         tempArr.append(tmpL)
     return tempArr
 
+res = []
+
 def addition_ner(ner):
-    print(type(ner), ner)
+    result = json.loads(ner)
+    print(type(result), result)
+    res.extend(result.keys())
 
 
 def replace_abbr(text, adict=None):
